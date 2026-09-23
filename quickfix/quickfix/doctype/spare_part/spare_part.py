@@ -12,10 +12,20 @@ class SparePart(Document):
         if self.part_code:
             self.part_code = self.part_code.upper()
 
-        self.name = make_autoname("PART-.YYYY.-.####")
+        self.name = make_autoname(f"{self.part_code}-.YYYY.-.####")
 
     def validate(self):
         if self.selling_price <= self.unit_cost:
             frappe.throw(
                 "Selling Price must be greater than Unit Cost."
             )
+        
+    def on_update(self):
+        default_labour_charge = frappe.db.get_value(
+            "QuickFix Settings",
+            None,
+            "default_labour_charge"
+        )
+        frappe.msgprint(
+            f"Default Labour Charge: {default_labour_charge}"
+        )
