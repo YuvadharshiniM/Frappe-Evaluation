@@ -36,6 +36,7 @@ class JobCard(Document):
             
         self.final_amount = self.parts_total + float(self.labour_charge or 0)
 
+
     def before_submit(self):
         if self.status != "Ready for Delivery":
             frappe.throw(
@@ -53,11 +54,7 @@ class JobCard(Document):
 
     def on_submit(self):
         for row in self.parts_used:
-            stock_qty = frappe.db.get_value(
-                "Spare Part",
-                row.part,
-                "stock_qty"
-            )
+            stock_qty = frappe.db.get_value("Spare Part",row.part,"stock_qty")
 
             frappe.db.set_value(
                 "Spare Part",
@@ -77,10 +74,8 @@ class JobCard(Document):
         invoice.payment_status = "Unpaid"
         invoice.insert(ignore_permissions=True)
         
-        frappe.enqueue(
-            "quickfix.api.send_job_ready_email",
-            job_card_name=self.name
-        )
+        frappe.enqueue("quickfix.api.send_job_ready_email",job_card_name=self.name)
+        frappe.enqueue("quickfix.api.send_webhook",job_card_name=self.name,queue="short")
         
     def on_cancel(self):
         self.db_set("status", "Cancelled")
@@ -106,8 +101,8 @@ class JobCard(Document):
             "name"
         )
 
-        if invoice:
-            frappe.get_doc("Service Invoice", invoice).cancel()
+        # if invoice:
+        #     frappe.get_doc("Service Invoice", invoice).cancel()
             
     # def on_trash(self):
     #     if self.status not in ["Draft", "Cancelled"]:
@@ -117,3 +112,6 @@ class JobCard(Document):
     
     def on_update(self):
         pass
+    
+    def before_print(self, print_settings=None):
+        self.print_summary = f"{self.customer_name} - {self.device_brand} {self.device_model}"

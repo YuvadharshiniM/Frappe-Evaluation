@@ -64,3 +64,27 @@ def rename_technician(old_name, new_name):
         new_name,
         merge=False
     )
+    
+## webhook
+@frappe.whitelist()
+import frappe
+def send_webhook(job_card_name):
+    import requests
+    settings = frappe.get_single("QuickFix Settings")
+    if not settings.webhook_url:
+        return
+    doc = frappe.get_doc( "Job Card",job_card_name )
+    payload = {
+        "event": "job_card_ready",
+        "job_card": doc.name,
+        "customer_name": doc.customer_name,
+        "device_type": doc.device_type,
+        "status": doc.status,
+        "amount": doc.final_amount
+    }
+    try:
+        r = requests.post(settings.webhook_url,json=payload,timeout=5)
+        r.raise_for_status()
+        frappe.logger("quickfix").info(f"Webhook sent successfully for {doc.name}")
+    except Exception as e:
+        frappe.log_error(f"Webhook failed: {e}","QuickFix Webhook Error")

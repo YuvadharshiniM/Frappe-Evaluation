@@ -269,9 +269,33 @@ fixtures = [
         "filters": [
             ["role", "in", ["QF Service Staff", "QF Technician", "QF Manager"]]
         ]
-    }
+    },
+    "Client Script"
 ]
 
-# permission_query_conditions = {
-#     "Job Card": "quickfix.permissions.job_card_query"
-# }
+jinja = {
+    "methods": [
+        "quickfix.jinja.get_shop_name",
+        "quickfix.jinja.format_value"
+    ]
+}
+
+permission_query_conditions = {
+    "Job Card": "quickfix.permissions.job_card_query"
+}
+
+doc_events = {
+    "*": {
+        "on_update": "quickfix.audit.log_change",
+        "on_submit": "quickfix.audit.log_change",
+        "on_cancel": "quickfix.audit.log_change",
+    }
+}
+
+after_install = "quickfix.install.after_install"
+
+scheduler_events = {
+    "daily": [
+        "quickfix.tasks.check_low_stock"
+    ]
+}
